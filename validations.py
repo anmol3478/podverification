@@ -1,10 +1,12 @@
+import difflib
+
 def validate_structured_info(structured_info, reference_info, threshold):
     """
-    Dummy validation function. Compares fields in structured_info and reference_info.
-    Returns a dict with 'field_results' as expected by the app.
+    Validation function. Compares fields in structured_info and reference_info.
+    Assigns a score based on similarity between extracted and reference values.
+    Uses the threshold to determine match/hallucination/null status.
     """
     field_results = {}
-    # List of fields to check
     fields = [
         "text_quality_score", "courier_partner", "awb_number", "recipient_name",
         "recipient_address", "recipient_signature", "recipient_stamp", "delivery_date", "handwritten_notes"
@@ -17,16 +19,17 @@ def validate_structured_info(structured_info, reference_info, threshold):
         extracted_value = extracted.get("text") if isinstance(extracted, dict) and "text" in extracted else extracted
         reference_value = ref
 
-        # Simple match logic
         if extracted_value is None or reference_value is None:
             status = "null"
             score = 0
-        elif str(extracted_value).strip().lower() == str(reference_value).strip().lower():
-            status = "match"
-            score = 100
         else:
-            status = "hallucination"
-            score = 0
+            # Compute similarity ratio (0 to 1)
+            ratio = difflib.SequenceMatcher(None, str(extracted_value).strip().lower(), str(reference_value).strip().lower()).ratio()
+            score = int(ratio * 100)
+            if score >= threshold:
+                status = "match"
+            else:
+                status = "hallucination"
 
         field_results[field] = {
             "status": status,
