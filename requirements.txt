@@ -3,4 +3,4 @@ pandas
 pillow
 requests
 pydantic
-difflib
+
